@@ -1,9 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "mcp__honeycomb__get_workspace_context",
+      "mcp__honeycomb__get_environment",
+      "Bash(./send_otlp_log.sh:*)",
+      "Bash(env)",
+      "mcp__honeycomb__run_query",
+      "mcp__honeycomb__get_dataset_columns"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "honeycomb"
+  ]
 }
