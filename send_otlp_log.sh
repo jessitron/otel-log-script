@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Usage: send_otlp_log.sh < sample_input.json
+
 set -e
 
 # Check required environment variable
@@ -11,16 +13,6 @@ fi
 # Set defaults for optional environment variables
 OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS:-""}
 OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-"http://localhost:4317"}
-
-# Extract Honeycomb API key from headers
-if [ -n "$OTEL_EXPORTER_OTLP_HEADERS" ]; then
-    HONEYCOMB_API_KEY=$(echo "$OTEL_EXPORTER_OTLP_HEADERS" | grep -o 'x-honeycomb-team=[^,]*' | cut -d'=' -f2)
-    HONEYCOMB_DATASET=$(echo "$OTEL_EXPORTER_OTLP_HEADERS" | grep -o 'x-honeycomb-dataset=[^,]*' | cut -d'=' -f2 || echo "logs")
-else
-    echo "Warning: OTEL_EXPORTER_OTLP_HEADERS not set, using localhost endpoint"
-    HONEYCOMB_API_KEY=""
-    HONEYCOMB_DATASET="logs"
-fi
 
 # Read JSON from stdin
 JSON_INPUT=$(cat)
@@ -111,7 +103,7 @@ OTLP_LOG_PAYLOAD='{
               "severityNumber": 9,
               "severityText": "INFO",
               "body": {
-                "stringValue": "Log with attributes from stdin JSON at '"$(date)"'"
+                "stringValue": "Claude hook"
               },
               "attributes": ['$DYNAMIC_ATTRIBUTES']
             }
@@ -123,30 +115,17 @@ OTLP_LOG_PAYLOAD='{
 }'
 
 echo "Sending OTLP log..."
-echo "Service: $OTEL_SERVICE_NAME"
-echo "Endpoint: $OTEL_EXPORTER_OTLP_ENDPOINT"
-echo "Headers: $OTEL_EXPORTER_OTLP_HEADERS"
-echo "Attributes: $DYNAMIC_ATTRIBUTES"
+
+# take each key=value pair in $OTLP_EXPORTER_OTLP_HEADERS and format it for curl as '-H key:value' 
+CURL_HEADERS=$(echo "$OTEL_EXPORTER_OTLP_HEADERS" | sed 's/,/ -H /g' | sed 's/=/:/g' | sed 's/^/-H /')
 
 # Determine endpoint and headers based on configuration
-if [[ "$OTEL_EXPORTER_OTLP_ENDPOINT" == *"honeycomb"* ]] && [ -n "$HONEYCOMB_API_KEY" ]; then
-    # Send to Honeycomb using their logs API
-    curl -X POST \
-      -H "Content-Type: application/json" \
-      -H "x-honeycomb-team: $HONEYCOMB_API_KEY" \
-      -H "x-honeycomb-dataset: $HONEYCOMB_DATASET" \
-      -d "$OTLP_LOG_PAYLOAD" \
-      "https://api.honeycomb.io/v1/logs" \
-      --fail --silent --show-error
-else
-    # Send to OTLP endpoint (default or custom)
-    curl -X POST \
-      -H "Content-Type: application/json" \
-      ${OTEL_EXPORTER_OTLP_HEADERS:+-H "$OTEL_EXPORTER_OTLP_HEADERS"} \
-      -d "$OTLP_LOG_PAYLOAD" \
-      "$OTEL_EXPORTER_OTLP_ENDPOINT/v1/logs" \
-      --fail --silent --show-error
-fi
+# destination is determined by environment variables
+curl -X POST \
+  -H "Content-Type: application/json" \
+  ${CURL_HEADERS} \
+  -d "$OTLP_LOG_PAYLOAD" \
+  "$OTEL_EXPORTER_OTLP_ENDPOINT/v1/logs" \
+  --fail --show-error 
 
 echo "✅ Log sent successfully!"
-echo "Check your observability backend for the log entry."

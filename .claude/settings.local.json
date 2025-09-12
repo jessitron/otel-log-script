@@ -7,9 +7,18 @@
       "Bash(./send_otlp_log.sh:*)",
       "Bash(env)",
       "mcp__honeycomb__run_query",
-      "mcp__honeycomb__get_dataset_columns"
+      "mcp__honeycomb__get_dataset_columns",
+      "Bash(unset:*)",
+      "Bash(source .env)",
+      "Bash(echo \"Headers: ''$OTEL_EXPORTER_OTLP_HEADERS''\")",
+      "Bash(git commit:*)",
+      "mcp__honeycomb__get_query_history",
+      "Bash(cat:*)",
+      "Bash(git add:*)"
     ],
-    "deny": [],
+    "deny": [
+      "mcp__honeycomb__get_service_map"
+    ],
     "ask": []
   },
   "enableAllProjectMcpServers": true,
