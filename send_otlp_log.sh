@@ -38,27 +38,27 @@ json_to_attributes() {
             # Escape quotes in the value for JSON
             value_escaped=$(echo "$value" | sed 's/"/\\"/g')
             
-            # Determine value type and format accordingly
+            # Determine value type and format accordingly, prefixing keys with "hook."
             case "$type" in
                 "string")
-                    attributes="$attributes{\"key\":\"$key\",\"value\":{\"stringValue\":\"$value_escaped\"}}"
+                    attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"stringValue\":\"$value_escaped\"}}"
                     ;;
                 "number")
                     if [[ "$value" == *.* ]]; then
-                        attributes="$attributes{\"key\":\"$key\",\"value\":{\"doubleValue\":$value}}"
+                        attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"doubleValue\":$value}}"
                     else
-                        attributes="$attributes{\"key\":\"$key\",\"value\":{\"intValue\":$value}}"
+                        attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"intValue\":$value}}"
                     fi
                     ;;
                 "boolean")
-                    attributes="$attributes{\"key\":\"$key\",\"value\":{\"boolValue\":$value}}"
+                    attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"boolValue\":$value}}"
                     ;;
                 "null")
-                    attributes="$attributes{\"key\":\"$key\",\"value\":{\"stringValue\":\"null\"}}"
+                    attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"stringValue\":\"null\"}}"
                     ;;
                 *)
                     # For objects and arrays, convert to JSON string
-                    attributes="$attributes{\"key\":\"$key\",\"value\":{\"stringValue\":\"$value_escaped\"}}"
+                    attributes="$attributes{\"key\":\"hook.$key\",\"value\":{\"stringValue\":\"$value_escaped\"}}"
                     ;;
             esac
         fi
@@ -70,6 +70,7 @@ json_to_attributes() {
 
 # Convert input JSON to OTLP attributes
 DYNAMIC_ATTRIBUTES=$(json_to_attributes "$JSON_INPUT")
+echo "Dynamic attributes: $DYNAMIC_ATTRIBUTES"
 
 # Create OTLP log payload with dynamic attributes
 OTLP_LOG_PAYLOAD='{
