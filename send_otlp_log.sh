@@ -89,6 +89,12 @@ OTLP_LOG_PAYLOAD='{
             "value": {
               "stringValue": "1.0.0"
             }
+          },
+          {
+            "key": "claude.project_dir",
+            "value": {
+              "stringValue": "'${CLAUDE_PROJECT_DIR:-}'"
+            }
           }
         ]
       },
