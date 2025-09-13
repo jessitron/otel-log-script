@@ -14,7 +14,8 @@
       "Bash(git commit:*)",
       "mcp__honeycomb__get_query_history",
       "Bash(cat:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(echo:*)"
     ],
     "deny": [
       "mcp__honeycomb__get_service_map"
