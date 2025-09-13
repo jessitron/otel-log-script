@@ -32,6 +32,9 @@ export OTEL_EXPORTER_OTLP_ENDPOINT="https://api.honeycomb.io:443"
 ### Basic Usage
 
 ```bash
+# Quick test with sample data
+source .env && ./send_otlp_log.sh < sample-input.json
+
 # Source environment variables
 source .env
 
