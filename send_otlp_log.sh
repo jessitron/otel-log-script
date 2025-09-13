@@ -14,8 +14,21 @@ fi
 OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS:-""}
 OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-"http://localhost:4317"}
 
+# if the headers exist and don't match key=value, complain
+if [[ -n "$OTEL_EXPORTER_OTLP_HEADERS" && ! "$OTEL_EXPORTER_OTLP_HEADERS" =~ ^[^=,]+=[^=,]+(,[^=,]+=[^=,]+)*$ ]]; then
+# write errors to stderr
+    exec 1>&2 echo "Error: OTEL_EXPORTER_OTLP_HEADERS must be a comma-separated list of key=value pairs"
+    exec 1>&2 echo "OTEL_EXPORTER_OTLP_HEADERS: $OTEL_EXPORTER_OTLP_HEADERS"
+    exit 1
+fi
+
+
 # Read JSON from stdin
 JSON_INPUT=$(cat)
+
+# Extract hook_event_name and tool_name from JSON input for log body
+HOOK_EVENT_NAME=$(echo "$JSON_INPUT" | jq -r '.hook_event_name // "unknown"')
+TOOL_NAME=$(echo "$JSON_INPUT" | jq -r '.tool_name // empty')
 
 # Generate timestamp in nanoseconds
 TIMESTAMP_NANOS=$(date +%s%N)
@@ -72,6 +85,13 @@ json_to_attributes() {
 DYNAMIC_ATTRIBUTES=$(json_to_attributes "$JSON_INPUT")
 echo "Dynamic attributes: $DYNAMIC_ATTRIBUTES"
 
+# Create log body message
+if [ -n "$TOOL_NAME" ]; then
+    LOG_BODY="Claude hook: $HOOK_EVENT_NAME ($TOOL_NAME)"
+else
+    LOG_BODY="Claude hook: $HOOK_EVENT_NAME"
+fi
+
 # Create OTLP log payload with dynamic attributes
 OTLP_LOG_PAYLOAD='{
   "resourceLogs": [
@@ -110,7 +130,7 @@ OTLP_LOG_PAYLOAD='{
               "severityNumber": 9,
               "severityText": "INFO",
               "body": {
-                "stringValue": "Claude hook"
+                "stringValue": "'$LOG_BODY'"
               },
               "attributes": ['$DYNAMIC_ATTRIBUTES']
             }
